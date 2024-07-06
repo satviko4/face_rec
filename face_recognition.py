@@ -1,10 +1,25 @@
 import numpy as np
 import cv2 as cv
+import os
+
 
 haar_cascade = cv.CascadeClassifier('haar_face.xml')
-people = ['Ben Afflek', 'Elton John', 'Jerry Seinfield', 'Madonna', 'Mindy Kaling']
+people = []
+label = []
 
+def train_recognizer():
+    global people, labels
+    if len(people) > 0:
+        face_recognizer.train(people, np.array(labels))
 
+for filename in os.listdir(Faces):
+    if filename.endswith(".jpg"):
+        image_path = os.path.join(Faces, filename)
+        face_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+        people.append(face_image)
+        label.append(int(filename.split("_")[0]))
+
+train_recognizer()
 
 face_recognizer = cv.face.LBPHFaceRecognizer_create()
 face_recognizer.read('face_trained.yml')
