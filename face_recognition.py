@@ -10,9 +10,9 @@ people = []
 label = []
 
 def train_recognizer():
-    global people, labels
+    global people, label
     if len(people) > 0:
-        face_recognizer.train(people, np.array(labels))
+        face_recognizer.train(people, np.array(label))
 
 # TO BE FILLED
 PATH = 'Faces'
@@ -45,17 +45,18 @@ while True:
         face = gray[y:y+h, x:x+w]
         label, confidence = face_recognizer.predict(face)
 
-        if confidence > 50:  # Adjust confidence threshold as needed
+        if confidence < 30:  # Adjust confidence threshold as needed
             # Face not recognized, add to the database
             face_id += 1
             face_image_path = os.path.join(PATH, f"{face_id}_{confidence}.jpg")
             cv.imwrite(face_image_path, face)
             people.append(face)
             label.append(face_id)
-            train_recognizer()
             label_text = f"New Face {face_id}"
         else:
             label_text = f"Face {label}, Confidence: {confidence}"
+
+        train_recognizer()
 
         # Draw a rectangle around the face and label it
         cv.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
