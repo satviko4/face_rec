@@ -5,10 +5,6 @@ import random
 
 
 face_cascade = cv.CascadeClassifier('haar_face.xml')
-
-
-
-
 face_recognizer = cv.face.LBPHFaceRecognizer_create()
 
 
@@ -59,9 +55,12 @@ while True:
         face = gray[y:y+h, x:x+w]
         label, confidence = face_recognizer.predict(face)
 
-        if confidence > 82:  # Adjust confidence threshold as needed
+        cv.imshow('Face Recognition', frame)
+        cv.waitKey(0)
+
+        if confidence > 82:
             # Face not recognized, add to the database
-            cv.imshow('Face Recognition', frame)
+
             face_id = len(labels)
             face_image_path = os.path.join(PATH, f"New_Face_{face_id}.jpg")
             cv.imwrite(face_image_path, face)
