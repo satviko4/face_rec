@@ -5,32 +5,46 @@ import random
 
 
 face_cascade = cv.CascadeClassifier('haar_face.xml')
-face_id = 0
-people = []
-label = []
 
-def train_recognizer():
-    global people, label
-    if len(people) > 0:
-        face_recognizer.train(people, np.array(label))
 
-# TO BE FILLED
-PATH = 'Faces'
-test_images_path = ''
 
-for filename in os.listdir(PATH):
-    if filename.endswith(".jpg"):
-        image_path = os.path.join(PATH, filename)
-        face_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
-        people.append(face_image)
-        label.append(int(filename.split("_")[0]))
-
-train_recognizer()
 
 face_recognizer = cv.face.LBPHFaceRecognizer_create()
 
-test_images = [f for f in os.listdir(test_images_path) if f.endswith(".jpg")]
 
+# Initialize variables
+PATH = 'Faces'
+test_images_path = 'Test'
+
+people = []
+labels = []
+label_dict = {}
+
+# Function to train the recognizer
+def train_recognizer():
+    global people, labels
+    if len(people) > 0:
+        face_recognizer.train(people, np.array(labels))
+
+# Load existing faces and labels from the training folder
+current_label = 0
+for person_name in os.listdir(PATH):
+    person_folder = os.path.join(PATH, person_name)
+    if os.path.isdir(person_folder):
+        label_dict[current_label] = person_name
+        for filename in os.listdir(person_folder):
+            if filename.endswith(".jpg"):
+                image_path = os.path.join(person_folder, filename)
+                face_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
+                people.append(face_image)
+                labels.append(current_label)
+        current_label += 1
+
+# Train the recognizer with the loaded data
+train_recognizer()
+
+# Get a list of test images
+test_images = [f for f in os.listdir(test_images_path) if f.endswith(".jpg")]
 
 while True:
     # Select a random test image
@@ -45,22 +59,27 @@ while True:
         face = gray[y:y+h, x:x+w]
         label, confidence = face_recognizer.predict(face)
 
-        if confidence < 30:  # Adjust confidence threshold as needed
+        if confidence > 100:  # Adjust confidence threshold as needed
             # Face not recognized, add to the database
-            face_id += 1
-            face_image_path = os.path.join(PATH, f"{face_id}_{confidence}.jpg")
+            face_id = len(labels)
+            face_image_path = os.path.join(PATH, f"New_Face_{face_id}.jpg")
             cv.imwrite(face_image_path, face)
             people.append(face)
-            label.append(face_id)
+            labels.append(face_id)
+            label_dict[face_id] = f"New Face {face_id}"
+            train_recognizer()
             label_text = f"New Face {face_id}"
         else:
-            label_text = f"Face {label}, Confidence: {confidence}"
-
-        train_recognizer()
+            label_text = f"{label_dict[label]}, Confidence: {confidence}"
 
         # Draw a rectangle around the face and label it
         cv.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
         cv.putText(frame, label_text, (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+        print(label_text)
 
     cv.imshow('Face Recognition', frame)
-    cv.waitKey(0)
+
+    if cv.waitKey(0) & 0xFF == ord('q'):
+        break
+
+cv.destroyAllWindows()
