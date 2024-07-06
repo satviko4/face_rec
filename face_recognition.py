@@ -12,9 +12,12 @@ def train_recognizer():
     if len(people) > 0:
         face_recognizer.train(people, np.array(labels))
 
-for filename in os.listdir(Faces):
+# TO BE FILLED
+PATH = ''
+
+for filename in os.listdir(PATH):
     if filename.endswith(".jpg"):
-        image_path = os.path.join(Faces, filename)
+        image_path = os.path.join(PATH, filename)
         face_image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
         people.append(face_image)
         label.append(int(filename.split("_")[0]))
