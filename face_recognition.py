@@ -59,25 +59,24 @@ while True:
         face = gray[y:y+h, x:x+w]
         label, confidence = face_recognizer.predict(face)
 
-        if confidence > 100:  # Adjust confidence threshold as needed
+        if confidence > 82:  # Adjust confidence threshold as needed
             # Face not recognized, add to the database
+            cv.imshow('Face Recognition', frame)
             face_id = len(labels)
             face_image_path = os.path.join(PATH, f"New_Face_{face_id}.jpg")
             cv.imwrite(face_image_path, face)
             people.append(face)
             labels.append(face_id)
-            label_dict[face_id] = f"New Face {face_id}"
+            label_dict[face_id] = input("write name")
             train_recognizer()
-            label_text = f"New Face {face_id}"
+            label_text = label_dict[face_id]
         else:
             label_text = f"{label_dict[label]}, Confidence: {confidence}"
+            cv.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            cv.putText(frame, label_text, (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+            print(label_text)
+            cv.imshow('Face Recognition', frame)
 
-        # Draw a rectangle around the face and label it
-        cv.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-        cv.putText(frame, label_text, (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
-        print(label_text)
-
-    cv.imshow('Face Recognition', frame)
 
     if cv.waitKey(0) & 0xFF == ord('q'):
         break
