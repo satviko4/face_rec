@@ -1,9 +1,11 @@
 import numpy as np
 import cv2 as cv
 import os
+import random
 
 
-haar_cascade = cv.CascadeClassifier('haar_face.xml')
+face_cascade = cv.CascadeClassifier('haar_face.xml')
+face_id = 0
 people = []
 label = []
 
@@ -13,7 +15,8 @@ def train_recognizer():
         face_recognizer.train(people, np.array(labels))
 
 # TO BE FILLED
-PATH = ''
+PATH = 'Faces'
+test_images_path = ''
 
 for filename in os.listdir(PATH):
     if filename.endswith(".jpg"):
@@ -25,25 +28,38 @@ for filename in os.listdir(PATH):
 train_recognizer()
 
 face_recognizer = cv.face.LBPHFaceRecognizer_create()
-face_recognizer.read('face_trained.yml')
 
-img = cv.imread(r'F:\codes\opencv\Faces\val\elton_john\1.jpg')
+test_images = [f for f in os.listdir(test_images_path) if f.endswith(".jpg")]
 
-gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-cv.imshow('Person', gray)
 
-# Detect the face in the image
-faces_rect = haar_cascade.detectMultiScale(gray, 1.1, 4)
+while True:
+    # Select a random test image
+    test_image_name = random.choice(test_images)
+    test_image_path = os.path.join(test_images_path, test_image_name)
+    frame = cv.imread(test_image_path)
 
-for (x,y,w,h) in faces_rect:
-    faces_roi = gray[y:y+h,x:x+w]
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    faces_detected = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-    label, confidence = face_recognizer.predict(faces_roi)
-    print(f'Label = {people[label]} with a confidence of {confidence}')
+    for (x, y, w, h) in faces_detected:
+        face = gray[y:y+h, x:x+w]
+        label, confidence = face_recognizer.predict(face)
 
-    cv.putText(img, str(people[label]), (20,20), cv.FONT_HERSHEY_COMPLEX, 1.0, (0,255,0), thickness=2)
-    cv.rectangle(img, (x,y), (x+w,y+h), (0,255,0), thickness=2)
+        if confidence > 50:  # Adjust confidence threshold as needed
+            # Face not recognized, add to the database
+            face_id += 1
+            face_image_path = os.path.join(PATH, f"{face_id}_{confidence}.jpg")
+            cv.imwrite(face_image_path, face)
+            people.append(face)
+            label.append(face_id)
+            train_recognizer()
+            label_text = f"New Face {face_id}"
+        else:
+            label_text = f"Face {label}, Confidence: {confidence}"
 
-cv.imshow('Detected Face', img)
+        # Draw a rectangle around the face and label it
+        cv.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        cv.putText(frame, label_text, (x, y-10), cv.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
-cv.waitKey(0)
+    cv.imshow('Face Recognition', frame)
+    cv.waitKey(0)
